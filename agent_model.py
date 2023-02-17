@@ -131,7 +131,7 @@ class River:
                     louse.attach(salmon)
                     break
 
-class Lice:
+class Louse:
     def __init__(self, init_position, velocity_lice, sigma_lice, parent, attached, age, stage):
         """
         A salmon moving downstream in the river. A basic salmon starts
@@ -151,6 +151,8 @@ class Lice:
         self.attached = attached
         self.age = age
         self.stage = stage
+    def __bool__(self)
+        return self.attached = 0 
 
     def update_position(self, delta_t):
         """
