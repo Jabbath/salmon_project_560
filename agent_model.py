@@ -132,13 +132,17 @@ class River:
                     break
 
 class Lice:
-    def __init__(self, init_position, velocity_lice, sigma_lice, parent, attached, age):
+    def __init__(self, init_position, velocity_lice, sigma_lice, parent, attached, age, stage):
         """
         A salmon moving downstream in the river. A basic salmon starts
         as not infected by lice.
         :param init_position: The starting position of the lice
         :param velocity: The average velocity with which the lice moves downstream
         :param variance: The variance with which to add noise to the lice's movements
+        :param parent: The infected salmon
+        :param attached: True or False
+        :param age: age of louse
+        :param stage: stage of life of louse
         """
         self.position = init_position
         self.velocity = velocity_lice
@@ -146,11 +150,12 @@ class Lice:
         self.parent = parent
         self.attached = attached
         self.age = age
+        self.stage = stage
 
     def update_position(self, delta_t):
         """
-        Move the salmon downstream with time difference delta_t. The
-        salmon moves according to v*delta_t + B_{delta_t}, where B
+        Move the lice downstream with time difference delta_t. The
+        lice moves according to v*delta_t + B_{delta_t}, where B
         is a Brownian motion.
         :param delta_t: The time for which the salmon travels.
         :return: None
@@ -159,11 +164,11 @@ class Lice:
         brownian_noise = np.random.normal(scale=brownian_variance)
         if 
         self.position = self.position + self.velocity*delta_t + brownian_noise
-    def add_parent():
+    def add_parent(Salmon):
         """
         Add a parent salmon
         """
-       
+       self.parent = Salmon
         
 
 
