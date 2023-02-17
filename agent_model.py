@@ -142,7 +142,7 @@ class Lice:
         :param parent: The infected salmon
         :param attached: True or False
         :param age: age of louse
-        :param stage: stage of life of louse
+        :param stage: stage of life of louse 1,2,3
         """
         self.position = init_position
         self.velocity = velocity_lice
@@ -169,6 +169,8 @@ class Lice:
         Add a parent salmon
         """
        self.parent = Salmon
+       self.age = 0
+       self.stage = 2
         
 
 
