@@ -2,7 +2,7 @@ import numpy as np
 import scipy
 
 class Salmon:
-    def __init__(self, init_position, velocity, sigma):
+    def __init__(self, init_position, velocity, variance):
         """
         A salmon moving downstream in the river. A basic salmon starts
         as not infected by lice.
@@ -12,7 +12,7 @@ class Salmon:
         """
         self.position = init_position
         self.velocity = velocity
-        self.variance = sigma
+        self.variance = variance
         self.lice = []  # Attached lice
 
     def update_position(self, delta_t):
@@ -23,7 +23,7 @@ class Salmon:
         :param delta_t: The time for which the salmon travels.
         :return: None
         """
-        brownian_variance = (self.sigma**2)*delta_t # See http://www.columbia.edu/~ks20/FE-Notes/4700-07-Notes-BM.pdf
+        brownian_variance = (self.variance**2)*delta_t # See http://www.columbia.edu/~ks20/FE-Notes/4700-07-Notes-BM.pdf
         brownian_noise = np.random.normal(scale=brownian_variance)
 
         self.position = self.position + self.velocity*delta_t + brownian_noise
@@ -132,7 +132,8 @@ class River:
                     break
 
 class Louse:
-    def __init__(self, init_position, velocity_lice, sigma_lice, parent, attached, age, stage):
+    def __init__(self, init_position, velocity_lice, variance_lice, parent=None, attached=False, age=0, stage=0,
+                 alive=True, gave_birth= False):
         """
         A salmon moving downstream in the river. A basic salmon starts
         as not infected by lice.
@@ -142,17 +143,16 @@ class Louse:
         :param parent: The infected salmon
         :param attached: True or False
         :param age: age of louse
-        :param stage: stage of life of louse 1,2,3
+        :param stage: stage of life of louse 0,1,2, where 0 is copepodid, 1 is chalimus, and 2 is adulting
         """
         self.position = init_position
         self.velocity = velocity_lice
-        self.variance = sigma_lice
+        self.variance = variance_lice
         self.parent = parent
         self.attached = attached
         self.age = age
         self.stage = stage
-    def __bool__(self)
-        return self.attached = 0 
+        self.alive = alive
 
     def update_position(self, delta_t):
         """
@@ -162,17 +162,54 @@ class Louse:
         :param delta_t: The time for which the salmon travels.
         :return: None
         """
-        brownian_variance = (self.sigma**2)*delta_t # See http://www.columbia.edu/~ks20/FE-Notes/4700-07-Notes-BM.pdf
+        brownian_variance = (self.variance**2)*delta_t # See http://www.columbia.edu/~ks20/FE-Notes/4700-07-Notes-BM.pdf
         brownian_noise = np.random.normal(scale=brownian_variance)
-        if 
-        self.position = self.position + self.velocity*delta_t + brownian_noise
-    def add_parent(Salmon):
+        if not self.attached:
+            self.position = self.position + self.velocity*delta_t + brownian_noise
+        elif  self.attached:
+            self.position = self.parent.position
+
+    def add_parent(salmon):
         """
         Add a parent salmon
         """
-       self.parent = Salmon
-       self.age = 0
-       self.stage = 2
+        self.parent = salmon
+        self.age = 0
+
+    def age(self,delta_t):
+
+        if not self.attached:
+            if self.age > 12:
+                self.alive = False
+            else :
+                self.age += delta_t
+
+        elif self.attached:
+            self.age += delta_t
+            if 0 < self.age and self.age <= 10:
+                self.stage = 0
+            elif 10 < self.age and self.age <= 35:
+                self.stage = 1
+            elif 35 < self.age:
+                self.stage = 2
+
+    def givebirth(self):
+        if not self.gave_birth:
+            new_lice_array = []
+
+            for i in range(50):
+                new_louse = Louse(self.position, self.velocity, self.variance)
+                new_lice_array.append(new_louse)
+
+            self.gave_birth = True
+
+            return new_lice_array
+
+        else:
+            return None
+
+
+
         
 
 
@@ -184,6 +221,13 @@ def salmon_test():
         test_salmon.update_position(delta_t)
         print(test_salmon.position)
 
-salmon_test()
+def louse_test():
+    test_louse = Louse(0, .5, .2)
+    delta_t = 1
 
+    for i in range(10):
+        test_louse.update_position(delta_t)
+        print(test_louse.position)
+# salmon_test()
+louse_test()
 
