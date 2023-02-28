@@ -103,11 +103,24 @@ class Louse:
         elif self.attached:
             self.age += delta_t
 
-            if 0 < self.age and self.age <= 10:
-                self.stage = 'copepodid'
-            elif 10 < self.age and self.age <= 35:
+            # Age the louse and kill it with probability according the Krkosek supplement
+            if (10 < self.age and self.age <= 35) and (self.stage == 'copepodid'):
+                # Draw from uniform to see if we survive
+                survival_prob = 0.8804
+                draw = np.random.uniform()
+
+                if draw > survival_prob:
+                    self.alive = False
+
                 self.stage = 'chalimus'
-            elif 35 < self.age:
+            elif (35 < self.age) and (self.stage == 'chalimus'):
+                # Draw from uniform to see if we survive
+                survival_prob = 0.2586
+                draw = np.random.uniform()
+
+                if draw > survival_prob:
+                    self.alive = False
+
                 self.stage = 'adulting'
 
     def give_birth(self):
@@ -210,6 +223,15 @@ class River:
         # Subset the lice to only those that are still alive
         self.lice = [louse for louse in self.lice if louse.alive]
 
+        # Remove any dead lice that might be attached to salmon
+        for salmon in self.salmon:
+            if salmon.infected:
+                new_lice = [louse for louse in salmon.lice if louse.alive]
+                salmon.lice = new_lice
+
+                if len(new_lice) == 0:
+                    salmon.infected = False
+
         # Subset salmon and lice to only those within the viewing area
         self.salmon = [salmon for salmon in self.salmon if salmon.position <= self.end_x]
         self.lice = [louse for louse in self.lice if louse.position <= self.end_x]
@@ -269,13 +291,12 @@ class River:
 
         for salmon in self.salmon:
             if salmon.infected:
-
                 for louse in salmon.lice:
+
                     # If we have specified a specific stage to plot, count only those lice
                     if stage_to_plot is not None:
                         if louse.stage == stage_to_plot:
                             infect_positions.append(salmon.position)
-
                     # Otherwise count all lice attached to a salmon
                     else:
                         infect_positions.append(salmon.position)
@@ -287,10 +308,18 @@ class River:
         else:
             plt.title(f'Positions of attached lice: {stage_to_plot}')
 
+        plt.xlabel('km downstream')
+        plt.ylabel('Number of attached lice')
+
         plt.hist(infect_positions, histtype='step', bins = np.linspace(self.start_x, self.end_x, 40))
         plt.show()
 
     def make_salmon_position_plot(self):
+        """
+        Plots the positions of each alive salmon.
+
+        :return:
+        """
         salmon_positions = []
 
         for salmon in self.salmon:
@@ -301,6 +330,11 @@ class River:
         plt.show()
 
     def make_louse_position_plot(self):
+        """
+        Plots the positions of all alive lice.
+
+        :return:
+        """
         louse_positions = []
 
         for louse in self.lice:
@@ -311,6 +345,11 @@ class River:
         plt.show()
 
     def make_louse_age_plot(self):
+        """
+        Plots the histogram of lice ages.
+
+        :return:
+        """
         louse_ages = []
 
         for louse in self.lice:
@@ -321,7 +360,6 @@ class River:
         plt.hist(louse_ages, histtype='step')
         plt.show()
 
-
 def run_river(river, num_iters, delta_t):
     for i in tqdm(range(num_iters)):
         river.update(delta_t)
@@ -329,9 +367,9 @@ def run_river(river, num_iters, delta_t):
 # river = River(salmon_velocity=1, salmon_sigma=0.5, louse_velocity=0.1, louse_sigma=0, salmon_spawn_rate=20,
 #               louse_farm_rate=200, louse_ambient_rate=10, infection_lambda=2, end_x=20)
 river = River(salmon_velocity=0.5, salmon_sigma=0.5, louse_velocity=0.1, louse_sigma=0.1, salmon_spawn_rate=20,
-              louse_farm_rate=200, louse_ambient_rate=10, infection_lambda=2, end_x=20)
+              louse_farm_rate=200, louse_ambient_rate=10, infection_lambda=1, end_x=40)
 
-run_river(river, 800, 0.1)
+run_river(river, 1000, 0.1)
 
 river.make_infection_plot(stage_to_plot='copepodid')
 river.make_salmon_position_plot()
