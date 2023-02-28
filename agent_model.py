@@ -313,7 +313,7 @@ class River:
         plt.xlabel('km downstream')
         plt.ylabel('Number of attached lice')
 
-        plt.hist(infect_positions, histtype='step', bins = np.linspace(self.start_x, self.end_x, 40))
+        plt.hist(infect_positions, histtype='step', bins = np.linspace(self.start_x, self.end_x, 40), density=True)
         plt.show()
 
     def make_salmon_position_plot(self):
@@ -368,10 +368,10 @@ def run_river(river, num_iters, delta_t):
 
 # river = River(salmon_velocity=1, salmon_sigma=0.5, louse_velocity=0.1, louse_sigma=0, salmon_spawn_rate=20,
 #               louse_farm_rate=200, louse_ambient_rate=10, infection_lambda=2, end_x=20)
-river = River(salmon_velocity=0.5, salmon_sigma=0.5, louse_velocity=0.1, louse_sigma=0.1, salmon_spawn_rate=20,
-              louse_farm_rate=200, louse_ambient_rate=10, infection_lambda=0.01, offspring_number=20, end_x=40)
+river = River(salmon_velocity=0.3, salmon_sigma=0.3, louse_velocity=-0.1, louse_sigma=0.1, salmon_spawn_rate=20,
+              louse_farm_rate=200, louse_ambient_rate=10, infection_lambda=2, offspring_number=20, end_x=20)
 
-run_river(river, 1000, 0.1)
+run_river(river, 2000, 0.1)
 
 river.make_infection_plot(stage_to_plot='copepodid')
 river.make_salmon_position_plot()
