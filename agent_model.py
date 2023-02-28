@@ -207,6 +207,10 @@ class River:
         # Subset the lice to only those that are still alive
         self.lice = [louse for louse in self.lice if louse.alive]
 
+        # Subset salmon and lice to only those within the viewing area
+        self.salmon = [salmon for salmon in self.salmon if salmon.position <= self.end_x]
+        self.lice = [louse for louse in self.lice if louse.position <= self.end_x]
+
         # Calculate infections
         self.update_infections(delta_t)
 
@@ -219,7 +223,7 @@ class River:
         :return:
         """
         # Calculate a louse-salmon distance matrix
-        louse_positions = np.array([louse.position for louse in self.lice])
+        louse_positions = np.array([louse.position for louse in self.lice if not louse.attached])
         louse_positions = louse_positions.reshape((len(self.lice), 1))
         salmon_positions = np.array([salmon.position for salmon in self.salmon])
         salmon_positions = salmon_positions.reshape((len(self.salmon), 1))
@@ -252,12 +256,33 @@ class River:
 
         for salmon in self.salmon:
             if salmon.infected:
-                infect_positions.append(salmon.position)
+                for i in range(len(salmon.lice)):
+                    infect_positions.append(salmon.position)
 
         plt.figure(figsize=(10, 10))
         plt.hist(infect_positions, histtype='step', bins = np.linspace(self.start_x, self.end_x, 40))
-        print(len(self.salmon))
         plt.show()
+
+    def make_salmon_position_plot(self):
+        salmon_positions = []
+
+        for salmon in self.salmon:
+            salmon_positions.append(salmon.position)
+
+        plt.figure(figsize=(10, 10))
+        plt.hist(salmon_positions, histtype='step', bins=np.linspace(self.start_x, self.end_x, 40))
+        plt.show()
+
+    def make_louse_position_plot(self):
+        louse_positions = []
+
+        for louse in self.lice:
+            louse_positions.append(louse.position)
+
+        plt.figure(figsize=(10, 10))
+        plt.hist(louse_positions, histtype='step', bins=np.linspace(self.start_x, self.end_x, 40))
+        plt.show()
+
 
 def salmon_test():
     test_salmon = Salmon(0, 5, 2)
@@ -281,8 +306,10 @@ def run_river(river, num_iters, delta_t):
     for i in tqdm(range(num_iters)):
         river.update(delta_t)
 
-river = River(salmon_velocity=1, salmon_sigma=0.1, louse_velocity=0, louse_sigma=0.1, salmon_spawn_rate=100,
-              louse_farm_rate=100, louse_ambient_rate=0, infection_lambda=2)
+river = River(salmon_velocity=2, salmon_sigma=1, louse_velocity=0.1, louse_sigma=0, salmon_spawn_rate=20,
+              louse_farm_rate=200, louse_ambient_rate=1, infection_lambda=2)
 
-run_river(river, 1000, 0.1)
+run_river(river, 500, 0.1)
 river.make_infection_plot()
+river.make_salmon_position_plot()
+river.make_louse_position_plot()
