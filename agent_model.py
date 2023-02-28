@@ -34,7 +34,7 @@ class Salmon:
 
 class Louse:
     def __init__(self, init_position, velocity_lice, variance_lice, parent=None, attached=False, age=0, stage="copepodid",
-                 alive=True, gave_birth= False):
+                 alive=True, gave_birth= False, offspring_number=20):
         """
         A salmon moving downstream in the river. A basic salmon starts
         as not infected by lice.
@@ -55,6 +55,7 @@ class Louse:
         self.stage = stage
         self.alive = alive
         self.gave_birth = gave_birth
+        self.offspring_number = offspring_number
 
     def update_position(self, delta_t):
         """
@@ -133,7 +134,7 @@ class Louse:
         if not self.gave_birth:
             new_lice_array = []
 
-            for i in range(50):
+            for i in range(self.offspring_number):
                 new_louse = Louse(self.position, self.velocity, self.variance)
                 new_lice_array.append(new_louse)
 
@@ -146,7 +147,7 @@ class Louse:
 class River:
     def __init__(self, salmon_velocity, salmon_sigma, louse_velocity, louse_sigma,
                  salmon_spawn_rate, louse_farm_rate, louse_ambient_rate, infection_lambda,
-                 start_x=-20, end_x=20):
+                 offspring_number=20, start_x=-20, end_x=20):
         '''
         Initializes the river. The river should contain salmon
         and lice. The initial distribution of lice should mirror
@@ -163,6 +164,7 @@ class River:
         self.lice = []
         self.louse_velocity = louse_velocity
         self.louse_sigma = louse_sigma
+        self.louse_offspring = offspring_number
 
         self.salmon_spawn_rate = salmon_spawn_rate
         self.louse_farm_rate = louse_farm_rate
@@ -367,7 +369,7 @@ def run_river(river, num_iters, delta_t):
 # river = River(salmon_velocity=1, salmon_sigma=0.5, louse_velocity=0.1, louse_sigma=0, salmon_spawn_rate=20,
 #               louse_farm_rate=200, louse_ambient_rate=10, infection_lambda=2, end_x=20)
 river = River(salmon_velocity=0.5, salmon_sigma=0.5, louse_velocity=0.1, louse_sigma=0.1, salmon_spawn_rate=20,
-              louse_farm_rate=200, louse_ambient_rate=10, infection_lambda=1, end_x=40)
+              louse_farm_rate=200, louse_ambient_rate=10, infection_lambda=0.01, offspring_number=20, end_x=40)
 
 run_river(river, 1000, 0.1)
 
