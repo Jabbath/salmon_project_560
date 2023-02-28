@@ -1,6 +1,8 @@
 import numpy as np
 import scipy
 from scipy import spatial
+from tqdm import tqdm
+import matplotlib.pyplot as plt
 
 class Salmon:
     def __init__(self, init_position, velocity, variance):
@@ -15,6 +17,7 @@ class Salmon:
         self.velocity = velocity
         self.variance = variance
         self.lice = []  # Attached lice
+        self.infected = False
 
     def update_position(self, delta_t):
         """
@@ -68,13 +71,15 @@ class Louse:
             self.position = self.position + self.velocity*delta_t + brownian_noise
         elif self.attached:
             self.position = self.parent.position
-    def add_parent(salmon):
+    def attach(self, salmon):
         """
         Add a parent salmon.
 
         :param salmon: The salmon to which the louse attaches
         """
         self.parent = salmon
+        salmon.lice.append(self)
+        salmon.infected = True
         self.age = 0
 
     def increase_age(self, delta_t):
@@ -242,6 +247,18 @@ class River:
                     louse.attach(salmon)
                     break
 
+    def make_infection_plot(self):
+        infect_positions = []
+
+        for salmon in self.salmon:
+            if salmon.infected:
+                infect_positions.append(salmon.position)
+
+        plt.figure(figsize=(10, 10))
+        plt.hist(infect_positions, histtype='step', bins = np.linspace(self.start_x, self.end_x, 40))
+        print(len(self.salmon))
+        plt.show()
+
 def salmon_test():
     test_salmon = Salmon(0, 5, 2)
     delta_t = 1
@@ -260,6 +277,12 @@ def louse_test():
 # salmon_test()
 #louse_test()
 
-river = River(5, 2, 0.5, 0.2, 10, 20, 2, 4)
-river.update(1)
+def run_river(river, num_iters, delta_t):
+    for i in tqdm(range(num_iters)):
+        river.update(delta_t)
 
+river = River(salmon_velocity=1, salmon_sigma=0.1, louse_velocity=0, louse_sigma=0.1, salmon_spawn_rate=100,
+              louse_farm_rate=100, louse_ambient_rate=0, infection_lambda=2)
+
+run_river(river, 1000, 0.1)
+river.make_infection_plot()
