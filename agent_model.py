@@ -54,6 +54,7 @@ class Louse:
         self.age = age
         self.stage = stage
         self.alive = alive
+        self.gave_birth = False
 
     def update_position(self, delta_t):
         """
@@ -80,6 +81,7 @@ class Louse:
         self.parent = salmon
         salmon.lice.append(self)
         salmon.infected = True
+        self.attached = True
         self.age = 0
 
     def increase_age(self, delta_t):
@@ -100,6 +102,7 @@ class Louse:
         # Otherwise age the louse
         elif self.attached:
             self.age += delta_t
+
             if 0 < self.age and self.age <= 10:
                 self.stage = 0
             elif 10 < self.age and self.age <= 35:
@@ -107,7 +110,7 @@ class Louse:
             elif 35 < self.age:
                 self.stage = 2
 
-    def givebirth(self):
+    def give_birth(self):
         """
         Allows the louse to create new lice at it's current location. Can only be
         used once.
@@ -201,7 +204,7 @@ class River:
 
             # Check if the louse is old enough to give birth and make new lice if it is
             if louse.age >= 57 and not louse.gave_birth:
-                new_lice = louse.givebirth()
+                new_lice = louse.give_birth()
                 self.lice.extend(new_lice)
 
         # Subset the lice to only those that are still alive
@@ -222,9 +225,12 @@ class River:
         :param delta_t:
         :return:
         """
+        # Get the un-attached lice
+        unattached_lice = [louse for louse in self.lice if not louse.attached]
+
         # Calculate a louse-salmon distance matrix
-        louse_positions = np.array([louse.position for louse in self.lice if not louse.attached])
-        louse_positions = louse_positions.reshape((len(self.lice), 1))
+        louse_positions = np.array([louse.position for louse in unattached_lice])
+        louse_positions = louse_positions.reshape((len(unattached_lice), 1))
         salmon_positions = np.array([salmon.position for salmon in self.salmon])
         salmon_positions = salmon_positions.reshape((len(self.salmon), 1))
 
@@ -246,18 +252,33 @@ class River:
                 # If the salmon is infected, attach the louse to it
                 if sampled_time <= delta_t:
                     salmon = self.salmon[target_salmon_idx]
-                    louse = self.lice[louse_idx]
+                    louse = unattached_lice[louse_idx]
 
                     louse.attach(salmon)
                     break
 
-    def make_infection_plot(self):
+    def make_infection_plot(self, stage_to_plot=None):
+        """
+        Plots of histogram of louse positions for lice which are attached
+        to a salmon. Can be restricted to certain stages of lice.
+
+        :param stage_to_plot: The stage of lice we wish to count.
+        :return:
+        """
         infect_positions = []
 
         for salmon in self.salmon:
             if salmon.infected:
-                for i in range(len(salmon.lice)):
-                    infect_positions.append(salmon.position)
+
+                for louse in salmon.lice:
+                    # If we have specified a specific stage to plot, count only those lice
+                    if stage_to_plot is not None:
+                        if louse.stage == stage_to_plot:
+                            infect_positions.append(salmon.position)
+
+                    # Otherwise count all lice attached to a salmon
+                    else:
+                        infect_positions.append(salmon.position)
 
         plt.figure(figsize=(10, 10))
         plt.hist(infect_positions, histtype='step', bins = np.linspace(self.start_x, self.end_x, 40))
@@ -283,6 +304,17 @@ class River:
         plt.hist(louse_positions, histtype='step', bins=np.linspace(self.start_x, self.end_x, 40))
         plt.show()
 
+    def make_louse_age_plot(self):
+        louse_ages = []
+
+        for louse in self.lice:
+            louse_ages.append(louse.age)
+
+        plt.figure(figsize=(10, 10))
+        plt.title('Histogram of Louse Ages')
+        plt.hist(louse_ages, histtype='step')
+        plt.show()
+
 
 def salmon_test():
     test_salmon = Salmon(0, 5, 2)
@@ -306,10 +338,12 @@ def run_river(river, num_iters, delta_t):
     for i in tqdm(range(num_iters)):
         river.update(delta_t)
 
-river = River(salmon_velocity=2, salmon_sigma=1, louse_velocity=0.1, louse_sigma=0, salmon_spawn_rate=20,
-              louse_farm_rate=200, louse_ambient_rate=1, infection_lambda=2)
+river = River(salmon_velocity=1, salmon_sigma=0.5, louse_velocity=0.1, louse_sigma=0, salmon_spawn_rate=20,
+              louse_farm_rate=200, louse_ambient_rate=1, infection_lambda=2, end_x=20)
 
-run_river(river, 500, 0.1)
-river.make_infection_plot()
+run_river(river, 800, 0.1)
+
+river.make_infection_plot(stage_to_plot=1)
 river.make_salmon_position_plot()
 river.make_louse_position_plot()
+river.make_louse_age_plot()
