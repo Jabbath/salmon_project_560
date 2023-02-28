@@ -33,7 +33,7 @@ class Salmon:
         self.position = self.position + self.velocity*delta_t + brownian_noise
 
 class Louse:
-    def __init__(self, init_position, velocity_lice, variance_lice, parent=None, attached=False, age=0, stage=0,
+    def __init__(self, init_position, velocity_lice, variance_lice, parent=None, attached=False, age=0, stage="copepodid",
                  alive=True, gave_birth= False):
         """
         A salmon moving downstream in the river. A basic salmon starts
@@ -44,7 +44,7 @@ class Louse:
         :param parent: The infected salmon
         :param attached: True or False
         :param age: age of louse
-        :param stage: stage of life of louse 0,1,2, where 0 is copepodid, 1 is chalimus, and 2 is adulting
+        :param stage: stage of life of louse: copepodid, chalimus, adulting
         """
         self.position = init_position
         self.velocity = velocity_lice
@@ -54,7 +54,7 @@ class Louse:
         self.age = age
         self.stage = stage
         self.alive = alive
-        self.gave_birth = False
+        self.gave_birth = gave_birth
 
     def update_position(self, delta_t):
         """
@@ -104,11 +104,11 @@ class Louse:
             self.age += delta_t
 
             if 0 < self.age and self.age <= 10:
-                self.stage = 0
+                self.stage = 'copepodid'
             elif 10 < self.age and self.age <= 35:
-                self.stage = 1
+                self.stage = 'chalimus'
             elif 35 < self.age:
-                self.stage = 2
+                self.stage = 'adulting'
 
     def give_birth(self):
         """
@@ -281,6 +281,12 @@ class River:
                         infect_positions.append(salmon.position)
 
         plt.figure(figsize=(10, 10))
+
+        if stage_to_plot is None:
+            plt.title('Positions of attached lice: all stages')
+        else:
+            plt.title(f'Positions of attached lice: {stage_to_plot}')
+
         plt.hist(infect_positions, histtype='step', bins = np.linspace(self.start_x, self.end_x, 40))
         plt.show()
 
@@ -338,12 +344,14 @@ def run_river(river, num_iters, delta_t):
     for i in tqdm(range(num_iters)):
         river.update(delta_t)
 
-river = River(salmon_velocity=1, salmon_sigma=0.5, louse_velocity=0.1, louse_sigma=0, salmon_spawn_rate=20,
-              louse_farm_rate=200, louse_ambient_rate=1, infection_lambda=2, end_x=20)
+# river = River(salmon_velocity=1, salmon_sigma=0.5, louse_velocity=0.1, louse_sigma=0, salmon_spawn_rate=20,
+#               louse_farm_rate=200, louse_ambient_rate=10, infection_lambda=2, end_x=20)
+river = River(salmon_velocity=0.5, salmon_sigma=0.5, louse_velocity=0.1, louse_sigma=0.1, salmon_spawn_rate=20,
+              louse_farm_rate=200, louse_ambient_rate=10, infection_lambda=2, end_x=20)
 
 run_river(river, 800, 0.1)
 
-river.make_infection_plot(stage_to_plot=1)
+river.make_infection_plot(stage_to_plot='copepodid')
 river.make_salmon_position_plot()
 river.make_louse_position_plot()
 river.make_louse_age_plot()
