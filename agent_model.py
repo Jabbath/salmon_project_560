@@ -35,7 +35,7 @@ class Salmon:
 class Louse:
     def __init__(self, init_position, velocity_lice, sigma_lice, parent=None,
                  attached=False, age=0, stage="copepodid",
-                 alive=True, gave_birth= False, offspring_number=20):
+                 alive=True, gave_birth=False, offspring_number=4):
         """
         A salmon moving downstream in the river. A basic salmon starts
         as not infected by lice.
@@ -135,7 +135,10 @@ class Louse:
         if not self.gave_birth:
             new_lice_array = []
 
-            for i in range(self.offspring_number):
+            # Draw from a poisson to see how many offspring we produce
+            num_offspring = np.random.poisson(lam=self.offspring_number)
+
+            for i in range(num_offspring):
                 new_louse = Louse(self.position, self.velocity, self.sigma)
                 new_lice_array.append(new_louse)
 
@@ -148,7 +151,7 @@ class Louse:
 class River:
     def __init__(self, salmon_velocity, salmon_sigma, louse_velocity, louse_sigma,
                  salmon_spawn_rate, louse_farm_rate, louse_ambient_rate, infection_lambda,
-                 offspring_number=20, start_x=-20, end_x=20):
+                 offspring_number=4, start_x=-20, end_x=20):
         '''
         Initializes the river. The river should contain salmon
         and lice. The initial distribution of lice should mirror
@@ -197,7 +200,7 @@ class River:
         num_farm_lice_to_spawn = np.random.poisson(lam=expected_num_farm_lice)
 
         for i in range(num_farm_lice_to_spawn):
-            new_louse = Louse(0, self.louse_velocity, self.louse_sigma)
+            new_louse = Louse(0, self.louse_velocity, self.louse_sigma, offspring_number=self.louse_offspring)
             self.lice.append(new_louse)
 
         # Spawn wild lice
@@ -206,7 +209,7 @@ class River:
 
         for i in range(num_wild_lice_to_spawn):
             location = np.random.uniform(self.start_x, self.end_x)
-            new_louse = Louse(location, self.louse_velocity, self.louse_sigma)
+            new_louse = Louse(location, self.louse_velocity, self.louse_sigma, offspring_number=self.louse_offspring)
             self.lice.append(new_louse)
 
         # Update salmon positions
@@ -476,8 +479,13 @@ def run_river(river, num_iters, delta_t):
 #               louse_farm_rate=200, louse_ambient_rate=10, infection_lambda=2, end_x=20)
 # river = River(salmon_velocity=0.3, salmon_sigma=0.3, louse_velocity=-0.1, louse_sigma=0.2589, salmon_spawn_rate=10,
 #               louse_farm_rate=50, louse_ambient_rate=10, infection_lambda=0.00125, offspring_number=4, end_x=20)
-river = River(salmon_velocity=0.3, salmon_sigma=0.3, louse_velocity=-0.1, louse_sigma=0.2589, salmon_spawn_rate=10,
-              louse_farm_rate=50, louse_ambient_rate=10, infection_lambda=0.00125, offspring_number=4, end_x=20)
+# For case
+SPAWN_RATE = 20
+
+river = River(salmon_velocity=0.3, salmon_sigma=0.3, louse_velocity=-0.1,
+              louse_sigma=0.2589, salmon_spawn_rate=SPAWN_RATE,
+              louse_farm_rate=5*SPAWN_RATE, louse_ambient_rate=SPAWN_RATE,
+              infection_lambda=0.00125, offspring_number=17.57, end_x=20)
 
 run_river(river, 1400, 0.1)
 
