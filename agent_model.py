@@ -184,21 +184,24 @@ class River:
         :return:
         """
         # Spawn salmon
-        num_salmon_to_spawn = int(self.salmon_spawn_rate*delta_t)
+        expected_num_salmon = self.salmon_spawn_rate*delta_t
+        num_salmon_to_spawn = np.random.poisson(lam=expected_num_salmon)
 
         for i in range(num_salmon_to_spawn):
             new_salmon = Salmon(self.start_x, self.salmon_velocity, self.salmon_sigma)
             self.salmon.append(new_salmon)
 
         # Spawn farm lice
-        num_farm_lice_to_spawn = int(self.louse_farm_rate*delta_t)
+        expected_num_farm_lice = self.louse_farm_rate*delta_t
+        num_farm_lice_to_spawn = np.random.poisson(lam=expected_num_farm_lice)
 
         for i in range(num_farm_lice_to_spawn):
             new_louse = Louse(0, self.louse_velocity, self.louse_sigma)
             self.lice.append(new_louse)
 
         # Spawn wild lice
-        num_wild_lice_to_spawn = int(self.louse_ambient_rate*delta_t)
+        expected_num_wild_lice = self.louse_ambient_rate*delta_t
+        num_wild_lice_to_spawn = np.random.poisson(lam=expected_num_wild_lice)
 
         for i in range(num_wild_lice_to_spawn):
             location = np.random.uniform(self.start_x, self.end_x)
@@ -418,7 +421,7 @@ class River:
 
         plt.figure(figsize=(10, 10))
 
-        num_bins = int(self.start_x - self.end_x)
+        num_bins = int(self.end_x - self.start_x)
         plt.hist(salmon_positions, histtype='step', bins=np.linspace(self.start_x, self.end_x, num_bins))
 
         if save_path is not None:
@@ -439,7 +442,7 @@ class River:
 
         plt.figure(figsize=(10, 10))
 
-        num_bins = int(self.start_x - self.end_x)
+        num_bins = int(self.end_x - self.start_x)
         plt.hist(louse_positions, histtype='step', bins=np.linspace(self.start_x, self.end_x, num_bins))
 
         if save_path is not None:
@@ -482,7 +485,7 @@ river = River(salmon_velocity=0.3, salmon_sigma=0.3, louse_velocity=-0.1, louse_
 run_river(river, 1400, 0.1)
 
 river.make_abundance_plot(stage_to_plot='copepodid')
-river.make_lice_counts(stage_to_plot='copepodid')
+#river.make_lice_counts_plot(stage_to_plot='copepodid')
 # river.make_infection_plot(stage_to_plot='copepodid')
 # river.make_salmon_position_plot()
 river.make_louse_position_plot()
