@@ -266,7 +266,7 @@ class River:
         dist_matrix = np.abs(dist_matrix)  # We only care about the magnitude of distances
 
         # Find which salmon are within the distance threshold
-        threshold = 3*self.salmon_sigma*np.sqrt(delta_t)
+        threshold = self.salmon_sigma*np.sqrt(delta_t)
         threshold_matrix = dist_matrix < threshold
 
         # For each louse and each salmon within the threshold, check if we infect
