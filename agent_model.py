@@ -95,7 +95,7 @@ class Louse:
 
         # If the salmon doesn't become attached in a set amount of days, it dies
         if not self.attached:
-            if self.age > 12:
+            if self.age > 10:
                 self.alive = False
             else :
                 self.age += delta_t
@@ -266,6 +266,8 @@ class River:
         threshold_matrix = dist_matrix < threshold
 
         # For each louse and each salmon within the threshold, check if we infect
+        infections = 0
+
         for louse_idx in range(threshold_matrix.shape[0]):
             possible_targets = np.where(threshold_matrix[louse_idx, :])[0]
 
@@ -274,14 +276,18 @@ class River:
                 sampled_time = np.random.exponential(scale=1/self.infection_lambda)
 
                 # If the salmon is infected, attach the louse to it
+                #print(sampled_time, delta_t)
                 if sampled_time <= delta_t:
+                    #print('infected')
                     salmon = self.salmon[target_salmon_idx]
                     louse = unattached_lice[louse_idx]
 
                     louse.attach(salmon)
+                    infections += 1
                     break
+        #print(infections)
 
-    def make_infection_plot(self, stage_to_plot=None):
+    def make_infection_plot(self, stage_to_plot=None, save_path=None):
         """
         Plots of histogram of louse positions for lice which are attached
         to a salmon. Can be restricted to certain stages of lice.
@@ -313,10 +319,93 @@ class River:
         plt.xlabel('km downstream')
         plt.ylabel('Number of attached lice')
 
-        plt.hist(infect_positions, histtype='step', bins = np.linspace(self.start_x, self.end_x, 40), density=True)
+        # Bin the space into 1km blocks and create a normalized histogram of infections
+        num_bins = int(self.end_x - self.start_x)
+        plt.hist(infect_positions, histtype='step',
+                 bins=np.linspace(self.start_x, self.end_x, num_bins), density=True)
+
+        if save_path is not None:
+            plt.savefig(save_path)
+
         plt.show()
 
-    def make_salmon_position_plot(self):
+    def make_abundance_plot(self, stage_to_plot, save_path=None):
+        """
+        Plots of abundance on each stage of lice per salmon. Abundance
+        is the percentage of fish in a section of the river which
+
+        :param stage_to_plot: The stage of lice we wish to count.
+        :return:
+        """
+        # Bin the space into 1 km blocks
+        num_bins = int(self.end_x - self.start_x)
+        bins = np.linspace(self.start_x, self.end_x, num_bins, endpoint=True)
+        infection_counts = np.zeros(num_bins)
+        num_salmon = np.zeros(num_bins)
+
+        for salmon in self.salmon:
+            # Find the bin in which the count belongs
+            for i in range(len(bins) - 1):
+                if salmon.position >= bins[i] and salmon.position < bins[i+1]:
+                    num_salmon[i] += 1
+
+                    # See whether there are any attached lice of the stage
+                    num_attached = 0
+
+                    for louse in salmon.lice:
+                        if louse.stage == stage_to_plot:
+                            num_attached = 1
+                            break
+
+                    infection_counts[i] += num_attached
+                    break
+
+        # Normalize infection counts by number of salmon to get abundance
+        abundances = np.divide(infection_counts, num_salmon)
+        print(infection_counts, num_salmon)
+
+        # Plot abundances
+        plt.figure(figsize=(10, 10))
+        plt.title(f'Relative abundance of {stage_to_plot}')
+        plt.ylabel('Abundance')
+        plt.xlabel('Position')
+        plt.scatter(bins, abundances)
+        plt.plot(bins, abundances)
+
+        # Optionally save the figure
+        if save_path is not None:
+            plt.savefig(save_path)
+
+        plt.show()
+
+    def make_lice_counts_plot(self, stage_to_plot, save_path=None):
+        """
+        Plots of abundance on each stage of lice per salmon.
+
+        :param stage_to_plot: The stage of lice we wish to count.
+        :return:
+        """
+        infection_numbers = []
+
+        for salmon in self.salmon:
+            num_attached = 0
+
+            for louse in salmon.lice:
+                if louse.stage == stage_to_plot:
+                    num_attached += 1
+
+            infection_numbers.append(num_attached)
+
+        # Plot abundances
+        plt.figure(figsize=(10, 10))
+        plt.hist(infection_numbers)
+
+        if save_path is not None:
+            plt.savefig(save_path)
+
+        plt.show()
+
+    def make_salmon_position_plot(self, save_path=None):
         """
         Plots the positions of each alive salmon.
 
@@ -328,10 +417,16 @@ class River:
             salmon_positions.append(salmon.position)
 
         plt.figure(figsize=(10, 10))
-        plt.hist(salmon_positions, histtype='step', bins=np.linspace(self.start_x, self.end_x, 40))
+
+        num_bins = int(self.start_x - self.end_x)
+        plt.hist(salmon_positions, histtype='step', bins=np.linspace(self.start_x, self.end_x, num_bins))
+
+        if save_path is not None:
+            plt.savefig(save_path)
+
         plt.show()
 
-    def make_louse_position_plot(self):
+    def make_louse_position_plot(self, save_path=None):
         """
         Plots the positions of all alive lice.
 
@@ -343,10 +438,16 @@ class River:
             louse_positions.append(louse.position)
 
         plt.figure(figsize=(10, 10))
-        plt.hist(louse_positions, histtype='step', bins=np.linspace(self.start_x, self.end_x, 40))
+
+        num_bins = int(self.start_x - self.end_x)
+        plt.hist(louse_positions, histtype='step', bins=np.linspace(self.start_x, self.end_x, num_bins))
+
+        if save_path is not None:
+            plt.savefig(save_path)
+
         plt.show()
 
-    def make_louse_age_plot(self):
+    def make_louse_age_plot(self, save_path=None):
         """
         Plots the histogram of lice ages.
 
@@ -360,6 +461,10 @@ class River:
         plt.figure(figsize=(10, 10))
         plt.title('Histogram of Louse Ages')
         plt.hist(louse_ages, histtype='step')
+
+        if save_path is not None:
+            plt.savefig(save_path)
+
         plt.show()
 
 def run_river(river, num_iters, delta_t):
@@ -368,12 +473,17 @@ def run_river(river, num_iters, delta_t):
 
 # river = River(salmon_velocity=1, salmon_sigma=0.5, louse_velocity=0.1, louse_sigma=0, salmon_spawn_rate=20,
 #               louse_farm_rate=200, louse_ambient_rate=10, infection_lambda=2, end_x=20)
-river = River(salmon_velocity=0.3, salmon_sigma=0.3, louse_velocity=-0.1, louse_sigma=0.1, salmon_spawn_rate=20,
-              louse_farm_rate=200, louse_ambient_rate=10, infection_lambda=2, offspring_number=20, end_x=20)
+# river = River(salmon_velocity=0.3, salmon_sigma=0.3, louse_velocity=-0.1, louse_sigma=0.2589, salmon_spawn_rate=10,
+#               louse_farm_rate=50, louse_ambient_rate=10, infection_lambda=0.00125, offspring_number=4, end_x=20)
 
-run_river(river, 2000, 0.1)
+river = River(salmon_velocity=0.3, salmon_sigma=0.3, louse_velocity=-0.1, louse_sigma=0.2589, salmon_spawn_rate=10,
+              louse_farm_rate=50, louse_ambient_rate=10, infection_lambda=0.00125, offspring_number=4, end_x=20)
 
-river.make_infection_plot(stage_to_plot='copepodid')
-river.make_salmon_position_plot()
+run_river(river, 1400, 0.1)
+
+river.make_abundance_plot(stage_to_plot='copepodid')
+river.make_lice_counts(stage_to_plot='copepodid')
+# river.make_infection_plot(stage_to_plot='copepodid')
+# river.make_salmon_position_plot()
 river.make_louse_position_plot()
-river.make_louse_age_plot()
+# river.make_louse_age_plot()
