@@ -5,7 +5,7 @@ from tqdm import tqdm
 import matplotlib.pyplot as plt
 
 class Salmon:
-    def __init__(self, init_position, velocity, variance):
+    def __init__(self, init_position, velocity, sigma):
         """
         A salmon moving downstream in the river. A basic salmon starts
         as not infected by lice.
@@ -15,7 +15,7 @@ class Salmon:
         """
         self.position = init_position
         self.velocity = velocity
-        self.variance = variance
+        self.sigma = sigma
         self.lice = []  # Attached lice
         self.infected = False
 
@@ -27,13 +27,14 @@ class Salmon:
         :param delta_t: The time for which the salmon travels.
         :return: None
         """
-        brownian_variance = (self.variance**2)*delta_t # See http://www.columbia.edu/~ks20/FE-Notes/4700-07-Notes-BM.pdf
+        brownian_variance = (self.sigma**2)*delta_t # See http://www.columbia.edu/~ks20/FE-Notes/4700-07-Notes-BM.pdf
         brownian_noise = np.random.normal(scale=brownian_variance)
 
         self.position = self.position + self.velocity*delta_t + brownian_noise
 
 class Louse:
-    def __init__(self, init_position, velocity_lice, variance_lice, parent=None, attached=False, age=0, stage="copepodid",
+    def __init__(self, init_position, velocity_lice, sigma_lice, parent=None,
+                 attached=False, age=0, stage="copepodid",
                  alive=True, gave_birth= False, offspring_number=20):
         """
         A salmon moving downstream in the river. A basic salmon starts
@@ -48,7 +49,7 @@ class Louse:
         """
         self.position = init_position
         self.velocity = velocity_lice
-        self.variance = variance_lice
+        self.sigma = sigma_lice
         self.parent = parent
         self.attached = attached
         self.age = age
@@ -67,7 +68,7 @@ class Louse:
         :param delta_t: The time for which the salmon travels.
         :return: None
         """
-        brownian_variance = (self.variance**2)*delta_t # See http://www.columbia.edu/~ks20/FE-Notes/4700-07-Notes-BM.pdf
+        brownian_variance = (self.sigma**2)*delta_t # See http://www.columbia.edu/~ks20/FE-Notes/4700-07-Notes-BM.pdf
         brownian_noise = np.random.normal(scale=brownian_variance)
         if not self.attached:
             self.position = self.position + self.velocity*delta_t + brownian_noise
@@ -135,7 +136,7 @@ class Louse:
             new_lice_array = []
 
             for i in range(self.offspring_number):
-                new_louse = Louse(self.position, self.velocity, self.variance)
+                new_louse = Louse(self.position, self.velocity, self.sigma)
                 new_lice_array.append(new_louse)
 
             self.gave_birth = True
@@ -279,16 +280,13 @@ class River:
                 sampled_time = np.random.exponential(scale=1/self.infection_lambda)
 
                 # If the salmon is infected, attach the louse to it
-                #print(sampled_time, delta_t)
                 if sampled_time <= delta_t:
-                    #print('infected')
                     salmon = self.salmon[target_salmon_idx]
                     louse = unattached_lice[louse_idx]
 
                     louse.attach(salmon)
                     infections += 1
                     break
-        #print(infections)
 
     def make_infection_plot(self, stage_to_plot=None, save_path=None):
         """
@@ -478,7 +476,6 @@ def run_river(river, num_iters, delta_t):
 #               louse_farm_rate=200, louse_ambient_rate=10, infection_lambda=2, end_x=20)
 # river = River(salmon_velocity=0.3, salmon_sigma=0.3, louse_velocity=-0.1, louse_sigma=0.2589, salmon_spawn_rate=10,
 #               louse_farm_rate=50, louse_ambient_rate=10, infection_lambda=0.00125, offspring_number=4, end_x=20)
-
 river = River(salmon_velocity=0.3, salmon_sigma=0.3, louse_velocity=-0.1, louse_sigma=0.2589, salmon_spawn_rate=10,
               louse_farm_rate=50, louse_ambient_rate=10, infection_lambda=0.00125, offspring_number=4, end_x=20)
 
