@@ -1,6 +1,7 @@
 import numpy as np
-import scipy
+import pandas as pd
 from scipy import spatial
+from scipy import interpolate
 from tqdm import tqdm
 import matplotlib.pyplot as plt
 
@@ -248,6 +249,8 @@ class River:
         # Calculate infections
         self.update_infections(delta_t)
 
+        #print(self.salmon[0].infected, self.salmon[0].position)
+
     def update_infections(self, delta_t):
         """
         Computes new infections between lice and salmon. For each salmon within a
@@ -333,7 +336,7 @@ class River:
 
         plt.show()
 
-    def make_abundance_plot(self, stage_to_plot, save_path=None):
+    def make_abundance_plot(self, stage_to_plot, save_path=None, show=True, true_data=None):
         """
         Plots of abundance on each stage of lice per salmon. Abundance
         is the percentage of fish in a section of the river which
@@ -366,7 +369,6 @@ class River:
 
         # Normalize infection counts by number of salmon to get abundance
         abundances = np.divide(infection_counts, num_salmon)
-        print(infection_counts, num_salmon)
 
         # Plot abundances
         plt.figure(figsize=(10, 10))
@@ -376,11 +378,22 @@ class River:
         plt.scatter(bins, abundances)
         plt.plot(bins, abundances)
 
+        if true_data is not None:
+            plt.scatter(true_data['x'], true_data['y'], color='red')
+            plt.plot(true_data['x'], true_data['y'], color='red')
+
+        plt.xlim(self.start_x, self.end_x)
+        plt.ylim(0, 1)
+
         # Optionally save the figure
         if save_path is not None:
             plt.savefig(save_path)
 
-        plt.show()
+        if show:
+            plt.show()
+        else:
+            plt.close()
+            return bins, abundances
 
     def make_lice_counts_plot(self, stage_to_plot, save_path=None):
         """
@@ -479,19 +492,73 @@ def run_river(river, num_iters, delta_t):
 #               louse_farm_rate=200, louse_ambient_rate=10, infection_lambda=2, end_x=20)
 # river = River(salmon_velocity=0.3, salmon_sigma=0.3, louse_velocity=-0.1, louse_sigma=0.2589, salmon_spawn_rate=10,
 #               louse_farm_rate=50, louse_ambient_rate=10, infection_lambda=0.00125, offspring_number=4, end_x=20)
-# For case
-SPAWN_RATE = 20
+# For case a)
+def river_test():
+    SPAWN_RATE = 10
 
-river = River(salmon_velocity=0.3, salmon_sigma=0.3, louse_velocity=-0.1,
-              louse_sigma=0.2589, salmon_spawn_rate=SPAWN_RATE,
-              louse_farm_rate=5*SPAWN_RATE, louse_ambient_rate=SPAWN_RATE,
-              infection_lambda=0.00125, offspring_number=17.57, end_x=20)
+    river = River(salmon_velocity=0.3, salmon_sigma=0.3, louse_velocity=-0.1,
+                  louse_sigma=0.2589, salmon_spawn_rate=SPAWN_RATE,
+                  louse_farm_rate=5*SPAWN_RATE, louse_ambient_rate=SPAWN_RATE,
+                  infection_lambda=0.00125, offspring_number=17.57, end_x=20)
+    run_river(river, 1400, 0.1)
 
-run_river(river, 1400, 0.1)
+    #river.make_abundance_plot(stage_to_plot='copepodid')
+    #river.make_lice_counts_plot(stage_to_plot='copepodid')
+    #river.make_infection_plot(stage_to_plot='chalimus')
+    # river.make_salmon_position_plot()
+    river.make_louse_position_plot()
+    # river.make_louse_age_plot()
 
-river.make_abundance_plot(stage_to_plot='copepodid')
-#river.make_lice_counts_plot(stage_to_plot='copepodid')
-# river.make_infection_plot(stage_to_plot='copepodid')
-# river.make_salmon_position_plot()
-river.make_louse_position_plot()
-# river.make_louse_age_plot()
+def run_sweep_iter(salmon_velocity, lam):
+    SPAWN_RATE = 20
+    TIME_STEP = 0.1
+
+    river = River(salmon_velocity=salmon_velocity, salmon_sigma=salmon_velocity, louse_velocity=-0.1,
+                  louse_sigma=0.2589, salmon_spawn_rate=SPAWN_RATE,
+                  louse_farm_rate=5 * SPAWN_RATE, louse_ambient_rate=SPAWN_RATE,
+                  infection_lambda=lam, offspring_number=17.57, end_x=20)
+
+    # Compute how many iterations we need for salmon to make it to 40 km and run till then
+    num_steps = int(40/(TIME_STEP*salmon_velocity))
+    run_river(river, num_steps, 0.1)
+
+    # Read the true data
+    true_df = pd.read_csv('copepodid_apr_1.csv', names=['x', 'y'])
+
+    bins, abundances = river.make_abundance_plot(stage_to_plot='copepodid',
+                              save_path=f'sweep_out/{salmon_velocity}_velocity_{lam}_lambda_copepodid.pdf',
+                              show=False, true_data=true_df)
+
+    # Fit a smoothing spline
+    spline = interpolate.UnivariateSpline(bins[~np.isnan(abundances)], abundances[~np.isnan(abundances)])
+
+    # Evaluate the spline at the datapoint locations
+    spline_eval = spline(true_df['x'].to_numpy())
+    #print(spline_eval)
+
+    # Get distances to the true values
+    dists = np.abs(spline_eval - true_df['y'].to_numpy())
+    #print(dists)
+    dist_avg = np.average(dists)
+    #print(dist_avg)
+
+    return dist_avg
+
+    # river.make_abundance_plot(stage_to_plot='chalimus',
+    #                           save_path=f'sweep_out/{salmon_velocity}_velocity_{lam}_lambda_chalimus.pdf', show=False)
+    # river.make_abundance_plot(stage_to_plot='adulting',
+    #                           save_path=f'sweep_out/{salmon_velocity}_velocity_{lam}_lambda_adulting.pdf', show=False)
+
+# salmon_vel_range = np.linspace(0.05, 0.5, 4, endpoint=True)
+# lambda_range = np.linspace(0.001, 0.0001, 4, endpoint=True)
+# results_arr = []
+#
+# for vel in salmon_vel_range:
+#     for lam in lambda_range:
+#         print(f'Running for vel={vel} and lam={lam}')
+#         dist_avg = run_sweep_iter(vel, lam)
+#         results_arr.append([vel, lam, dist_avg])
+
+run_sweep_iter(0.3, 0.00125)
+
+#river_test()
