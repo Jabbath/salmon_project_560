@@ -4,6 +4,7 @@ from scipy import spatial
 from scipy import interpolate
 from tqdm import tqdm
 import matplotlib.pyplot as plt
+import multiprocessing
 
 class Salmon:
     def __init__(self, init_position, velocity, sigma):
@@ -385,6 +386,11 @@ class River:
         plt.xlim(self.start_x, self.end_x)
         plt.ylim(0, 1)
 
+        spline = interpolate.CubicSpline(bins[~np.isnan(abundances)], abundances[~np.isnan(abundances)])
+        new_bins = np.linspace(self.start_x, self.end_x, 200)
+        spline_eval = spline(new_bins)
+        plt.plot(new_bins, spline_eval, color='green')
+
         # Optionally save the figure
         if save_path is not None:
             plt.savefig(save_path)
@@ -530,17 +536,14 @@ def run_sweep_iter(salmon_velocity, lam):
                               show=False, true_data=true_df)
 
     # Fit a smoothing spline
-    spline = interpolate.UnivariateSpline(bins[~np.isnan(abundances)], abundances[~np.isnan(abundances)])
+    spline = interpolate.CubicSpline(bins[~np.isnan(abundances)], abundances[~np.isnan(abundances)])
 
     # Evaluate the spline at the datapoint locations
     spline_eval = spline(true_df['x'].to_numpy())
-    #print(spline_eval)
 
     # Get distances to the true values
     dists = np.abs(spline_eval - true_df['y'].to_numpy())
-    #print(dists)
     dist_avg = np.average(dists)
-    #print(dist_avg)
 
     return dist_avg
 
@@ -549,17 +552,25 @@ def run_sweep_iter(salmon_velocity, lam):
     # river.make_abundance_plot(stage_to_plot='adulting',
     #                           save_path=f'sweep_out/{salmon_velocity}_velocity_{lam}_lambda_adulting.pdf', show=False)
 
-salmon_vel_range = np.linspace(0.05, 0.5, 4, endpoint=True)
-lambda_range = np.linspace(0.001, 0.0001, 4, endpoint=True)
-results_arr = []
+salmon_vel_range = np.linspace(0.45, 0.5, 1, endpoint=True)
+lambda_range = np.linspace(0.001, 0.0001, 1, endpoint=True)
+def sweep_wrapper(args):
+    vel = args[0]
+    lam = args[1]
+    dist_avg = run_sweep_iter(vel, lam)
+    return [vel, lam, dist_avg]
+
+args_arr = []
 
 for vel in salmon_vel_range:
     for lam in lambda_range:
-        print(f'Running for vel={vel} and lam={lam}')
-        dist_avg = run_sweep_iter(vel, lam)
-        results_arr.append([vel, lam, dist_avg])
+        args_arr.append([vel, lam])
 
-np.savetxt('sweep_out/results.txt', np.array(results_arr))
+if __name__ == '__main__':
+    with multiprocessing.Pool(5) as pool:
+        results = list(pool.map(sweep_wrapper, args_arr))
+
+    np.savetxt('sweep_out/results.txt', np.array(results))
 
 #run_sweep_iter(0.3, 0.00125)
 #river_test()
