@@ -107,7 +107,7 @@ class Louse:
             self.age += delta_t
 
             # Age the louse and kill it with probability according the Krkosek supplement
-            if (10 < self.age and self.age <= 35) and (self.stage == 'copepodid'):
+            if (10 < self.age and self.age <= 30.8) and (self.stage == 'copepodid'):
                 # Draw from uniform to see if we survive
                 survival_prob = 0.8804
                 draw = np.random.uniform()
@@ -116,7 +116,7 @@ class Louse:
                     self.alive = False
 
                 self.stage = 'chalimus'
-            elif (35 < self.age) and (self.stage == 'chalimus'):
+            elif (30.8 < self.age) and (self.stage == 'chalimus'):
                 # Draw from uniform to see if we survive
                 survival_prob = 0.2586
                 draw = np.random.uniform()
@@ -226,7 +226,7 @@ class River:
             louse.increase_age(delta_t)
 
             # Check if the louse is old enough to give birth and make new lice if it is
-            if louse.age >= 57 and not louse.gave_birth:
+            if louse.age >= 56.1 and not louse.gave_birth:
                 new_lice = louse.give_birth()
                 self.lice.extend(new_lice)
 
