@@ -549,16 +549,17 @@ def run_sweep_iter(salmon_velocity, lam):
     # river.make_abundance_plot(stage_to_plot='adulting',
     #                           save_path=f'sweep_out/{salmon_velocity}_velocity_{lam}_lambda_adulting.pdf', show=False)
 
-# salmon_vel_range = np.linspace(0.05, 0.5, 4, endpoint=True)
-# lambda_range = np.linspace(0.001, 0.0001, 4, endpoint=True)
-# results_arr = []
-#
-# for vel in salmon_vel_range:
-#     for lam in lambda_range:
-#         print(f'Running for vel={vel} and lam={lam}')
-#         dist_avg = run_sweep_iter(vel, lam)
-#         results_arr.append([vel, lam, dist_avg])
+salmon_vel_range = np.linspace(0.05, 0.5, 4, endpoint=True)
+lambda_range = np.linspace(0.001, 0.0001, 4, endpoint=True)
+results_arr = []
 
-run_sweep_iter(0.3, 0.00125)
+for vel in salmon_vel_range:
+    for lam in lambda_range:
+        print(f'Running for vel={vel} and lam={lam}')
+        dist_avg = run_sweep_iter(vel, lam)
+        results_arr.append([vel, lam, dist_avg])
 
+np.savetxt('sweep_out/results.txt', np.array(results_arr))
+
+#run_sweep_iter(0.3, 0.00125)
 #river_test()
