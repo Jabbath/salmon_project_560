@@ -47,7 +47,7 @@ class Louse:
         :param parent: The infected salmon
         :param attached: True or False
         :param age: age of louse
-        :param stage: stage of life of louse: copepodid, chalimus, adulting
+        :param stage: stage of life of louse: copepodid, chalimus, motile
         """
         self.position = init_position
         self.velocity = velocity_lice
@@ -125,7 +125,7 @@ class Louse:
                 if draw > survival_prob:
                     self.alive = False
 
-                self.stage = 'adulting'
+                self.stage = 'motile'
 
     def give_birth(self):
         """
@@ -515,7 +515,7 @@ def river_test():
     river.make_louse_position_plot()
     # river.make_louse_age_plot()
 
-def run_sweep_iter(salmon_velocity, lam):
+def run_sweep_iter(salmon_velocity, lam, stage_to_plot='copepodid'):
     SPAWN_RATE = 20
     TIME_STEP = 0.1
 
@@ -529,11 +529,21 @@ def run_sweep_iter(salmon_velocity, lam):
     run_river(river, num_steps, 0.1)
 
     # Read the true data
-    true_df = pd.read_csv('copepodid_apr_1.csv', names=['x', 'y'])
-
-    bins, abundances = river.make_abundance_plot(stage_to_plot='copepodid',
-                              save_path=f'sweep_out/{salmon_velocity}_velocity_{lam}_lambda_copepodid.pdf',
-                              show=False, true_data=true_df)
+    if stage_to_plot == 'copepodid':
+        true_df = pd.read_csv('data/copepodid_apr_1.csv', names=['x', 'y'])
+        bins, abundances = river.make_abundance_plot(stage_to_plot='copepodid',
+                                  save_path=f'sweep_out/{salmon_velocity}_velocity_{lam}_lambda_copepodid.pdf',
+                                  show=False, true_data=true_df)
+    elif stage_to_plot == 'chalimus':
+        true_df = pd.read_csv('data/chalimus_apr_1.csv', names=['x', 'y'])
+        bins, abundances = river.make_abundance_plot(stage_to_plot='chalimus',
+                                                     save_path=f'sweep_out/{salmon_velocity}_velocity_{lam}_lambda_chalimus.pdf',
+                                                     show=False, true_data=true_df)
+    elif stage_to_plot == 'motiles':
+        true_df = pd.read_csv('data/motile_apr_1.csv', names=['x', 'y'])
+        bins, abundances = river.make_abundance_plot(stage_to_plot='motile',
+                                                     save_path=f'sweep_out/{salmon_velocity}_velocity_{lam}_lambda_motile.pdf',
+                                                     show=False, true_data=true_df)
 
     # Fit a smoothing spline
     spline = interpolate.CubicSpline(bins[~np.isnan(abundances)], abundances[~np.isnan(abundances)])
@@ -547,10 +557,6 @@ def run_sweep_iter(salmon_velocity, lam):
 
     return dist_avg
 
-    # river.make_abundance_plot(stage_to_plot='chalimus',
-    #                           save_path=f'sweep_out/{salmon_velocity}_velocity_{lam}_lambda_chalimus.pdf', show=False)
-    # river.make_abundance_plot(stage_to_plot='adulting',
-    #                           save_path=f'sweep_out/{salmon_velocity}_velocity_{lam}_lambda_adulting.pdf', show=False)
 
 salmon_vel_range = np.linspace(0.45, 0.5, 1, endpoint=True)
 lambda_range = np.linspace(0.001, 0.0001, 1, endpoint=True)
@@ -560,17 +566,17 @@ def sweep_wrapper(args):
     dist_avg = run_sweep_iter(vel, lam)
     return [vel, lam, dist_avg]
 
-args_arr = []
+# args_arr = []
+#
+# for vel in salmon_vel_range:
+#     for lam in lambda_range:
+#         args_arr.append([vel, lam])
+#
+# if __name__ == '__main__':
+#     with multiprocessing.Pool(5) as pool:
+#         results = list(pool.map(sweep_wrapper, args_arr))
+#
+#     np.savetxt('sweep_out/results.txt', np.array(results))
 
-for vel in salmon_vel_range:
-    for lam in lambda_range:
-        args_arr.append([vel, lam])
-
-if __name__ == '__main__':
-    with multiprocessing.Pool(5) as pool:
-        results = list(pool.map(sweep_wrapper, args_arr))
-
-    np.savetxt('sweep_out/results.txt', np.array(results))
-
-#run_sweep_iter(0.3, 0.00125)
+run_sweep_iter(0.2, 0.001, stage_to_plot='copepodid')
 #river_test()
