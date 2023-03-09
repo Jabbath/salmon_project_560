@@ -97,31 +97,34 @@ def make_abundances_panel(river):
     plt.figure(figsize=(30, 10))
 
     plt.subplot(131)
+    plt.title('Copepodid', fontsize=50)
     plt.xlim(river.start_x, river.end_x)
     plt.ylim(0, 1)
-    plt.xticks(fontsize=15)
-    plt.yticks(fontsize=15)
-    plt.ylabel('Relative Abundance', fontsize=25)
+    plt.xticks(fontsize=30, rotation=45)
+    plt.yticks(fontsize=30)
+    plt.ylabel('Relative Abundance', fontsize=50)
     plt.plot(new_bins, copepodid_spline_eval, color='green')
     plt.plot(copepodid_gt['x'], copepodid_gt['y'], marker='o', color='red')
 
     plt.subplot(132)
+    plt.title('Chalimus', fontsize=50)
     plt.xlim(river.start_x, river.end_x)
     plt.ylim(0, 1)
-    plt.xticks(fontsize=15)
+    plt.xticks(fontsize=30, rotation=45)
     plt.tick_params(
         axis='y',  # changes apply to the y-axis
         which='both',  # both major and minor ticks are affected
         left=False,  # ticks along the bottom edge are off
         labelleft=False)  # labels along the bottom edge are off
-    plt.xlabel('Position in River (km)', fontsize=25)
+    plt.xlabel('Position in River (km)', fontsize=50)
     plt.plot(new_bins, chalimus_spline_eval, color='green')
     plt.plot(chalimus_gt['x'], chalimus_gt['y'], marker='o', color='red')
 
     plt.subplot(133)
+    plt.title('Motile', fontsize=50)
     plt.xlim(river.start_x, river.end_x)
     plt.ylim(0, 1)
-    plt.xticks(fontsize=15)
+    plt.xticks(fontsize=30, rotation=45)
     plt.tick_params(
         axis='y',  # changes apply to the y-axis
         which='both',  # both major and minor ticks are affected
@@ -130,10 +133,63 @@ def make_abundances_panel(river):
 
     plt.plot(new_bins, motile_spline_eval, label='Model Fit', color='green')
     plt.plot(motile_gt['x'], motile_gt['y'], marker='o', label='April 1st Dataset', color='red')
-    plt.legend(fontsize=20)
+    plt.legend(fontsize=40)
 
     plt.tight_layout()
     plt.savefig('figures/relative_abundance_panel.pdf')
+
+def make_planktonic_copepodid_comp(river_both, river_farm_only):
+    """
+    Makes a figure comparing the relative density of larval copepodids
+    in a river which only has farm sources, as compared to one that has
+    farm and ambient sources of lice.
+
+    :param river_both: The iterated river with both sources.
+    :param river_farm_only: The iterated river with only farm sources.
+    :return:
+    """
+    # Get the planktonic louse positions for both rivers
+    lice_both, bins_both = river_both.make_louse_position_plot(planktonic_only=True, show_plot=False)
+    lice_farm, bins_farm = river_farm_only.make_louse_position_plot(planktonic_only=True, show_plot=False)
+
+    # Get the midpoint of the bins to make plotting more convenient
+    bins_both_mid = np.zeros(len(bins_both) - 1)
+    bins_farm_mid = np.zeros(len(bins_farm) - 1)
+
+    for i in range(len(bins_both) - 1):
+        bins_both_mid[i] = (bins_both[i] + bins_both[i+1])/2
+        bins_farm_mid[i] = (bins_farm[i] + bins_farm[i+1])/2
+
+    bins_both = bins_both_mid
+    bins_farm = bins_farm_mid
+
+    # Fit splines to both
+    both_spline = interpolate.CubicSpline(bins_both[~np.isnan(lice_both)],
+                                               lice_both[~np.isnan(lice_both)])
+    farm_spline = interpolate.CubicSpline(bins_farm[~np.isnan(lice_farm)],
+                                          lice_farm[~np.isnan(lice_farm)])
+
+    # Evaluate the splines
+    new_bins_both = np.linspace(river_both.start_x, np.max(bins_both[~np.isnan(lice_both)]), 200)
+    new_bins_farm = np.linspace(river_farm_only.start_x, np.max(bins_farm[~np.isnan(lice_farm)]), 200)
+    both_spline_eval = both_spline(new_bins_both)
+    farm_spline_eval = farm_spline(new_bins_farm)
+
+    # Plot both results
+    plt.figure(figsize=(10, 10))
+    plt.ylabel('Planktonic Copepodid Density', fontsize=40)
+    plt.xlabel('Position in River (km)', fontsize=40)
+    plt.xlim(river_both.start_x, river_both.end_x)
+    plt.ylim(0, 0.8)
+    plt.xticks(fontsize=30, rotation=45)
+    plt.yticks(fontsize=30)
+
+    plt.plot(new_bins_both, both_spline_eval, color='blue', linewidth=4, label='Both Sources')
+    plt.plot(new_bins_farm, farm_spline_eval, color='red', linewidth=4, label='Farm Only')
+
+    plt.legend(fontsize=40)
+    plt.tight_layout()
+    plt.savefig('figures/planktonic_comparison.pdf')
 
 
 def sweep_wrapper(args):
@@ -189,15 +245,28 @@ def make_figures():
                   louse_sigma=np.sqrt(0.2589), salmon_spawn_rate=SPAWN_RATE,
                   louse_farm_rate=5 * SPAWN_RATE, louse_ambient_rate=SPAWN_RATE,
                   infection_lambda=BEST_LAMBDA, offspring_number=17.57, end_x=20)
+    river_farm = River(salmon_velocity=BEST_VELOCITY, salmon_sigma=BEST_VELOCITY, louse_velocity=-0.1,
+                  louse_sigma=np.sqrt(0.2589), salmon_spawn_rate=SPAWN_RATE,
+                  louse_farm_rate=5 * SPAWN_RATE, louse_ambient_rate=0,
+                  infection_lambda=BEST_LAMBDA, offspring_number=17.57, end_x=20)
+    river_ambient = River(salmon_velocity=BEST_VELOCITY, salmon_sigma=BEST_VELOCITY, louse_velocity=-0.1,
+                  louse_sigma=np.sqrt(0.2589), salmon_spawn_rate=SPAWN_RATE,
+                  louse_farm_rate=0, louse_ambient_rate=SPAWN_RATE,
+                  infection_lambda=BEST_LAMBDA, offspring_number=17.57, end_x=20)
 
     num_steps = int(RIVER_LENGTH/(TIME_STEP*BEST_VELOCITY))
     run_river(river, num_steps, TIME_STEP)
+    run_river(river_farm, num_steps, TIME_STEP)
+    run_river(river_ambient, num_steps, TIME_STEP)
 
     # Make the relative abundance panel
     make_abundances_panel(river)
 
     # Make the planktonic copepodid abundance plot (Krkosek fig. 3)
-    river.make_louse_position_plot(save_path='figures/planktonic_copepodid.pdf', planktonic_only=True)
+    make_planktonic_copepodid_comp(river, river_farm)
+
+    # Get the infection pressure
+    print(get_infection_pressure())
 
 make_figures()
 

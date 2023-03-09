@@ -444,7 +444,7 @@ class River:
 
         plt.show()
 
-    def make_louse_position_plot(self, save_path=None, planktonic_only=False):
+    def make_louse_position_plot(self, save_path=None, planktonic_only=False, show_plot=True):
         """
         Plots the positions of all alive lice.
 
@@ -462,13 +462,17 @@ class River:
         plt.figure(figsize=(10, 10))
 
         num_bins = int(self.end_x - self.start_x)
-        plt.hist(louse_positions, histtype='step', density=True,
+        vals, bins, patches = plt.hist(louse_positions, histtype='step', density=True,
                  bins=np.linspace(self.start_x, self.end_x, num_bins))
 
         if save_path is not None:
             plt.savefig(save_path)
 
-        plt.show()
+        if show_plot:
+            plt.show()
+        else:
+            plt.close()
+            return vals, bins
 
     def make_louse_age_plot(self, save_path=None):
         """
