@@ -1,10 +1,7 @@
 import numpy as np
-import pandas as pd
 from scipy import spatial
 from scipy import interpolate
-from tqdm import tqdm
 import matplotlib.pyplot as plt
-import multiprocessing
 
 class Salmon:
     def __init__(self, init_position, velocity, sigma):
@@ -447,7 +444,7 @@ class River:
 
         plt.show()
 
-    def make_louse_position_plot(self, save_path=None, attached_only=False):
+    def make_louse_position_plot(self, save_path=None, planktonic_only=False):
         """
         Plots the positions of all alive lice.
 
@@ -456,8 +453,8 @@ class River:
         louse_positions = []
 
         for louse in self.lice:
-            if attached_only:
-                if louse.attached:
+            if planktonic_only:
+                if not louse.attached:
                     louse_positions.append(louse.position)
             else:
                 louse_positions.append(louse.position)
@@ -465,7 +462,8 @@ class River:
         plt.figure(figsize=(10, 10))
 
         num_bins = int(self.end_x - self.start_x)
-        plt.hist(louse_positions, histtype='step', bins=np.linspace(self.start_x, self.end_x, num_bins))
+        plt.hist(louse_positions, histtype='step', density=True,
+                 bins=np.linspace(self.start_x, self.end_x, num_bins))
 
         if save_path is not None:
             plt.savefig(save_path)
