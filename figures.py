@@ -191,6 +191,29 @@ def make_planktonic_copepodid_comp(river_both, river_farm_only):
     plt.tight_layout()
     plt.savefig('figures/planktonic_comparison.pdf')
 
+def get_infection_pressure(river_both, river_ambient):
+    """
+    Computes the infection pressure in a river with both sources against that
+    of a river with only ambient lice.
+
+    :param river_both: A river with both sources of lice.
+    :param river_ambient: A river with only ambient lice.
+    :return: infection pressure (float)
+    """
+    # Find the number of infected salmon in the two rivers
+    infected_both = 0
+    infected_ambient = 0
+
+    for salmon in river_both.salmon:
+        if salmon.infected:
+            infected_both += 1
+
+    for salmon in river_ambient.salmon:
+        if salmon.infected:
+            infected_ambient += 1
+
+    return infected_both/infected_ambient
+
 
 def sweep_wrapper(args):
     """
@@ -266,7 +289,7 @@ def make_figures():
     make_planktonic_copepodid_comp(river, river_farm)
 
     # Get the infection pressure
-    print(get_infection_pressure())
+    print('Infection pressure is:', get_infection_pressure(river, river_ambient))
 
 make_figures()
 
